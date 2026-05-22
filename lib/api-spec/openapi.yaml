@@ -3,20 +3,36 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Ai Pop Cute Support Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: users
+    description: User operations
+  - name: posts
+    description: Post operations
+  - name: votes
+    description: Voting operations
+  - name: notifications
+    description: Notification operations
+  - name: messages
+    description: Messaging operations
+  - name: search
+    description: Search operations
+  - name: creator
+    description: Creator dashboard operations
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +40,1160 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── Auth ──────────────────────────────────────────────────────────────────
+  /auth/signup:
+    post:
+      operationId: signup
+      tags: [auth]
+      summary: Create a new account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupInput"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with email/username and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current session
+      responses:
+        "200":
+          description: Logged out
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+
+  /auth/forgot-password:
+    post:
+      operationId: forgotPassword
+      tags: [auth]
+      summary: Send password reset email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordInput"
+      responses:
+        "200":
+          description: Reset email sent
+
+  /auth/reset-password:
+    post:
+      operationId: resetPassword
+      tags: [auth]
+      summary: Reset password with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordInput"
+      responses:
+        "200":
+          description: Password reset
+        "400":
+          description: Invalid token
+
+  /auth/change-password:
+    post:
+      operationId: changePassword
+      tags: [auth]
+      summary: Change password while logged in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordInput"
+      responses:
+        "200":
+          description: Password changed
+
+  # ── Users ─────────────────────────────────────────────────────────────────
+  /users/{userId}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "404":
+          description: User not found
+
+  /users/by-username/{username}:
+    get:
+      operationId: getUserByUsername
+      tags: [users]
+      summary: Get user by username
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "404":
+          description: User not found
+
+  /users/me/profile:
+    patch:
+      operationId: updateProfile
+      tags: [users]
+      summary: Update own profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileUpdate"
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/me/privacy:
+    patch:
+      operationId: updatePrivacy
+      tags: [users]
+      summary: Update privacy settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrivacyUpdate"
+      responses:
+        "200":
+          description: Privacy settings updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivacySettings"
+
+  /users/me/notification-settings:
+    get:
+      operationId: getNotificationSettings
+      tags: [users]
+      summary: Get notification settings
+      responses:
+        "200":
+          description: Notification settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationSettings"
+    patch:
+      operationId: updateNotificationSettings
+      tags: [users]
+      summary: Update notification settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationSettingsUpdate"
+      responses:
+        "200":
+          description: Settings updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationSettings"
+
+  /users/me/chat-settings:
+    patch:
+      operationId: updateChatSettings
+      tags: [users]
+      summary: Update chat settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatSettingsUpdate"
+      responses:
+        "200":
+          description: Chat settings updated
+
+  /users/{userId}/follow:
+    post:
+      operationId: followUser
+      tags: [users]
+      summary: Follow a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Follow status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FollowStatus"
+
+  /users/{userId}/unfollow:
+    post:
+      operationId: unfollowUser
+      tags: [users]
+      summary: Unfollow a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Unfollowed
+
+  /users/{userId}/followers:
+    get:
+      operationId: getFollowers
+      tags: [users]
+      summary: Get followers list
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Followers list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+
+  /users/{userId}/following:
+    get:
+      operationId: getFollowing
+      tags: [users]
+      summary: Get following list
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Following list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+
+  /users/{userId}/posts:
+    get:
+      operationId: getUserPosts
+      tags: [users]
+      summary: Get user's posts
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User's posts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostListResponse"
+
+  /users/{userId}/block:
+    post:
+      operationId: blockUser
+      tags: [users]
+      summary: Block a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User blocked
+
+  /users/{userId}/unblock:
+    post:
+      operationId: unblockUser
+      tags: [users]
+      summary: Unblock a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User unblocked
+
+  /users/me/blocked:
+    get:
+      operationId: getBlockedUsers
+      tags: [users]
+      summary: Get blocked users list
+      responses:
+        "200":
+          description: Blocked users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+
+  /users/{userId}/restrict:
+    post:
+      operationId: restrictUser
+      tags: [users]
+      summary: Restrict a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User restricted
+
+  /users/{userId}/unrestrict:
+    post:
+      operationId: unrestrictUser
+      tags: [users]
+      summary: Unrestrict a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User unrestricted
+
+  /users/me/restricted:
+    get:
+      operationId: getRestrictedUsers
+      tags: [users]
+      summary: Get restricted users list
+      responses:
+        "200":
+          description: Restricted users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+
+  /users/follow-requests:
+    get:
+      operationId: getFollowRequests
+      tags: [users]
+      summary: Get pending follow requests
+      responses:
+        "200":
+          description: Follow requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+
+  /users/follow-requests/{requesterId}/accept:
+    post:
+      operationId: acceptFollowRequest
+      tags: [users]
+      summary: Accept a follow request
+      parameters:
+        - name: requesterId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Request accepted
+
+  /users/follow-requests/{requesterId}/reject:
+    post:
+      operationId: rejectFollowRequest
+      tags: [users]
+      summary: Reject a follow request
+      parameters:
+        - name: requesterId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Request rejected
+
+  /users/me/activity-log:
+    get:
+      operationId: getActivityLog
+      tags: [users]
+      summary: Get user activity log
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Activity log
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityLogResponse"
+
+  /users/me/reach:
+    get:
+      operationId: getPostsReach
+      tags: [users]
+      summary: Get posts reach stats
+      responses:
+        "200":
+          description: Posts reach
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostsReach"
+
+  # ── Posts ─────────────────────────────────────────────────────────────────
+  /posts:
+    get:
+      operationId: getFeed
+      tags: [posts]
+      summary: Get home feed
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Feed posts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostListResponse"
+    post:
+      operationId: createPost
+      tags: [posts]
+      summary: Create a new post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostInput"
+      responses:
+        "201":
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+
+  /posts/{postId}:
+    get:
+      operationId: getPost
+      tags: [posts]
+      summary: Get a post by ID
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Post detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+        "404":
+          description: Post not found
+    patch:
+      operationId: updatePost
+      tags: [posts]
+      summary: Update a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostUpdate"
+      responses:
+        "200":
+          description: Post updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+    delete:
+      operationId: deletePost
+      tags: [posts]
+      summary: Delete a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Post deleted
+
+  /posts/{postId}/like:
+    post:
+      operationId: likePost
+      tags: [posts]
+      summary: Like a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Like toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikeResponse"
+
+  /posts/{postId}/unlike:
+    post:
+      operationId: unlikePost
+      tags: [posts]
+      summary: Unlike a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Unliked
+
+  /posts/{postId}/comments:
+    get:
+      operationId: getComments
+      tags: [posts]
+      summary: Get post comments
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Comments list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentListResponse"
+    post:
+      operationId: createComment
+      tags: [posts]
+      summary: Add a comment
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentInput"
+      responses:
+        "201":
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+
+  /posts/{postId}/comments/{commentId}:
+    delete:
+      operationId: deleteComment
+      tags: [posts]
+      summary: Delete a comment
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Comment deleted
+
+  /posts/{postId}/pin:
+    post:
+      operationId: pinPost
+      tags: [posts]
+      summary: Pin a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Post pinned
+
+  /posts/{postId}/unpin:
+    post:
+      operationId: unpinPost
+      tags: [posts]
+      summary: Unpin a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Post unpinned
+
+  /posts/{postId}/share:
+    post:
+      operationId: sharePost
+      tags: [posts]
+      summary: Share a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Post shared
+
+  /posts/liked:
+    get:
+      operationId: getLikedPosts
+      tags: [posts]
+      summary: Get current user's liked posts
+      responses:
+        "200":
+          description: Liked posts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostListResponse"
+
+  # ── Votes ─────────────────────────────────────────────────────────────────
+  /votes/cast:
+    post:
+      operationId: castVote
+      tags: [votes]
+      summary: Cast a vote/cheer for Ai
+      responses:
+        "200":
+          description: Vote result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoteResult"
+
+  /votes/stats:
+    get:
+      operationId: getVoteStats
+      tags: [votes]
+      summary: Get vote statistics
+      responses:
+        "200":
+          description: Vote stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoteStats"
+
+  /votes/my-status:
+    get:
+      operationId: getMyVoteStatus
+      tags: [votes]
+      summary: Get current user's vote status for today
+      responses:
+        "200":
+          description: Vote status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyVoteStatus"
+
+  /votes/supporters:
+    get:
+      operationId: getSupporters
+      tags: [votes]
+      summary: Get recent supporters list
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Supporters list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupporterListResponse"
+
+  # ── Notifications ─────────────────────────────────────────────────────────
+  /notifications:
+    get:
+      operationId: getNotifications
+      tags: [notifications]
+      summary: Get user notifications
+      parameters:
+        - name: filter
+          in: query
+          schema:
+            type: string
+            enum: [all, unread, mentions, messages, activity]
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationListResponse"
+
+  /notifications/mark-all-read:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read
+      responses:
+        "200":
+          description: Marked as read
+
+  /notifications/{notificationId}/read:
+    post:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark single notification as read
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Marked as read
+
+  /notifications/{notificationId}:
+    delete:
+      operationId: deleteNotification
+      tags: [notifications]
+      summary: Delete a notification
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /notifications/unread-count:
+    get:
+      operationId: getUnreadNotificationCount
+      tags: [notifications]
+      summary: Get unread notification count
+      responses:
+        "200":
+          description: Unread count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnreadCount"
+
+  # ── Messages ──────────────────────────────────────────────────────────────
+  /conversations:
+    get:
+      operationId: getConversations
+      tags: [messages]
+      summary: Get all conversations
+      responses:
+        "200":
+          description: Conversations list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationListResponse"
+    post:
+      operationId: createConversation
+      tags: [messages]
+      summary: Start a new conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConversationInput"
+      responses:
+        "201":
+          description: Conversation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+
+  /conversations/{conversationId}:
+    get:
+      operationId: getConversation
+      tags: [messages]
+      summary: Get a conversation
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Conversation detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+
+  /conversations/{conversationId}/messages:
+    get:
+      operationId: getMessages
+      tags: [messages]
+      summary: Get messages in a conversation
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageListResponse"
+    post:
+      operationId: sendMessage
+      tags: [messages]
+      summary: Send a message
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageInput"
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+
+  /conversations/{conversationId}/seen:
+    post:
+      operationId: markConversationSeen
+      tags: [messages]
+      summary: Mark conversation messages as seen
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Marked as seen
+
+  /conversations/group:
+    post:
+      operationId: createGroupConversation
+      tags: [messages]
+      summary: Create a group chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupInput"
+      responses:
+        "201":
+          description: Group created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+
+  # ── Search ────────────────────────────────────────────────────────────────
+  /search:
+    get:
+      operationId: search
+      tags: [search]
+      summary: Search users, posts, hashtags, groups
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [all, users, posts, hashtags, groups]
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResults"
+
+  /search/trending:
+    get:
+      operationId: getTrending
+      tags: [search]
+      summary: Get trending hashtags
+      responses:
+        "200":
+          description: Trending hashtags
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrendingResponse"
+
+  # ── Creator Dashboard ──────────────────────────────────────────────────────
+  /creator/stats:
+    get:
+      operationId: getCreatorStats
+      tags: [creator]
+      summary: Get creator dashboard stats
+      responses:
+        "200":
+          description: Creator stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatorStats"
+
+  /creator/analytics:
+    get:
+      operationId: getCreatorAnalytics
+      tags: [creator]
+      summary: Get full analytics
+      responses:
+        "200":
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatorAnalytics"
+
+  /creator/vote-analytics:
+    get:
+      operationId: getVoteAnalytics
+      tags: [creator]
+      summary: Get vote analytics
+      responses:
+        "200":
+          description: Vote analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoteAnalytics"
+
+  /creator/supporters:
+    get:
+      operationId: getCreatorSupporters
+      tags: [creator]
+      summary: Get all supporters with vote counts
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Supporters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatorSupporterListResponse"
+
+  /creator/goal:
+    patch:
+      operationId: updateGoal
+      tags: [creator]
+      summary: Update vote goal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalUpdate"
+      responses:
+        "200":
+          description: Goal updated
+
+  /creator/posts:
+    get:
+      operationId: getCreatorPosts
+      tags: [creator]
+      summary: Get all Ai's posts with management options
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Creator posts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostListResponse"
+
+  /creator/comments:
+    get:
+      operationId: getCreatorComments
+      tags: [creator]
+      summary: Get all comments on creator's posts
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Comments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentListResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +1204,869 @@ components:
       required:
         - status
 
+    # ── Auth Schemas ─────────────────────────────────────────────────────────
+    SignupInput:
+      type: object
+      required: [name, username, email, password]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        username:
+          type: string
+          minLength: 3
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        avatarUrl:
+          type: ["string", "null"]
+
+    LoginInput:
+      type: object
+      required: [identifier, password]
+      properties:
+        identifier:
+          type: string
+          description: Email or username
+        password:
+          type: string
+
+    ForgotPasswordInput:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+
+    ResetPasswordInput:
+      type: object
+      required: [token, password]
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+          minLength: 8
+
+    ChangePasswordInput:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+          minLength: 8
+
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+
+    # ── User Schemas ─────────────────────────────────────────────────────────
+    User:
+      type: object
+      required: [id, numericId, name, username, email, isVerified, role, createdAt]
+      properties:
+        id:
+          type: integer
+        numericId:
+          type: integer
+        name:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+        bio:
+          type: ["string", "null"]
+        alternateBio:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        coverUrl:
+          type: ["string", "null"]
+        isVerified:
+          type: boolean
+        role:
+          type: string
+          enum: [user, creator]
+        isPrivate:
+          type: boolean
+        mixChannelId:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    UserProfile:
+      type: object
+      required: [id, numericId, name, username, isVerified, role, followersCount, followingCount, postsCount, likesCount, createdAt]
+      properties:
+        id:
+          type: integer
+        numericId:
+          type: integer
+        name:
+          type: string
+        username:
+          type: string
+        bio:
+          type: ["string", "null"]
+        alternateBio:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        coverUrl:
+          type: ["string", "null"]
+        isVerified:
+          type: boolean
+        role:
+          type: string
+          enum: [user, creator]
+        isPrivate:
+          type: boolean
+        mixChannelId:
+          type: ["string", "null"]
+        followersCount:
+          type: integer
+        followingCount:
+          type: integer
+        postsCount:
+          type: integer
+        likesCount:
+          type: integer
+        totalVotes:
+          type: integer
+        profileViews:
+          type: integer
+        isFollowing:
+          type: ["boolean", "null"]
+        isFollowRequestSent:
+          type: ["boolean", "null"]
+        isBlocked:
+          type: ["boolean", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    ProfileUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        username:
+          type: string
+        bio:
+          type: ["string", "null"]
+        alternateBio:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        coverUrl:
+          type: ["string", "null"]
+        mixChannelId:
+          type: ["string", "null"]
+
+    PrivacyUpdate:
+      type: object
+      properties:
+        isPrivate:
+          type: boolean
+        whoCanMessage:
+          type: string
+          enum: [everyone, followers, none]
+        whoCanComment:
+          type: string
+          enum: [everyone, followers, none]
+        whoCanViewFollowers:
+          type: string
+          enum: [everyone, followers, none]
+        whoCanDownload:
+          type: string
+          enum: [everyone, followers, none]
+
+    PrivacySettings:
+      type: object
+      required: [isPrivate, whoCanMessage, whoCanComment, whoCanViewFollowers, whoCanDownload]
+      properties:
+        isPrivate:
+          type: boolean
+        whoCanMessage:
+          type: string
+        whoCanComment:
+          type: string
+        whoCanViewFollowers:
+          type: string
+        whoCanDownload:
+          type: string
+
+    NotificationSettings:
+      type: object
+      properties:
+        votes:
+          type: boolean
+        newFollowers:
+          type: boolean
+        followRequests:
+          type: boolean
+        likes:
+          type: boolean
+        comments:
+          type: boolean
+        replies:
+          type: boolean
+        messages:
+          type: boolean
+        mentions:
+          type: boolean
+        postShares:
+          type: boolean
+        profileViews:
+          type: boolean
+        aiNewPosts:
+          type: boolean
+        systemAlerts:
+          type: boolean
+
+    NotificationSettingsUpdate:
+      type: object
+      properties:
+        votes:
+          type: boolean
+        newFollowers:
+          type: boolean
+        followRequests:
+          type: boolean
+        likes:
+          type: boolean
+        comments:
+          type: boolean
+        replies:
+          type: boolean
+        messages:
+          type: boolean
+        mentions:
+          type: boolean
+        postShares:
+          type: boolean
+        profileViews:
+          type: boolean
+        aiNewPosts:
+          type: boolean
+        systemAlerts:
+          type: boolean
+
+    ChatSettingsUpdate:
+      type: object
+      properties:
+        readReceipts:
+          type: boolean
+        typingIndicators:
+          type: boolean
+        showOnlineStatus:
+          type: boolean
+        whoCanMessageMe:
+          type: string
+          enum: [everyone, followers, none]
+
+    FollowStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [following, requested, unfollowed]
+
+    UserListResponse:
+      type: object
+      required: [users, total, page]
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserProfile"
+        total:
+          type: integer
+        page:
+          type: integer
+
+    # ── Post Schemas ─────────────────────────────────────────────────────────
+    Post:
+      type: object
+      required: [id, authorId, visibility, allowComments, allowDownloads, isPinned, viewsCount, likesCount, commentsCount, sharesCount, createdAt]
+      properties:
+        id:
+          type: integer
+        authorId:
+          type: integer
+        author:
+          $ref: "#/components/schemas/UserProfile"
+        caption:
+          type: ["string", "null"]
+        mediaUrl:
+          type: ["string", "null"]
+        mediaType:
+          type: ["string", "null"]
+          enum: ["image", "video", null]
+        filterName:
+          type: ["string", "null"]
+        visibility:
+          type: string
+          enum: [public, followers, private]
+        allowComments:
+          type: boolean
+        allowDownloads:
+          type: boolean
+        isPinned:
+          type: boolean
+        viewsCount:
+          type: integer
+        likesCount:
+          type: integer
+        commentsCount:
+          type: integer
+        sharesCount:
+          type: integer
+        downloadsCount:
+          type: integer
+        isLiked:
+          type: ["boolean", "null"]
+        isSaved:
+          type: ["boolean", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PostInput:
+      type: object
+      properties:
+        caption:
+          type: ["string", "null"]
+        mediaUrl:
+          type: ["string", "null"]
+        mediaType:
+          type: ["string", "null"]
+        filterName:
+          type: ["string", "null"]
+        visibility:
+          type: string
+          enum: [public, followers, private]
+        allowComments:
+          type: boolean
+        allowDownloads:
+          type: boolean
+        isPinned:
+          type: boolean
+
+    PostUpdate:
+      type: object
+      properties:
+        caption:
+          type: ["string", "null"]
+        visibility:
+          type: string
+          enum: [public, followers, private]
+        allowComments:
+          type: boolean
+        allowDownloads:
+          type: boolean
+        isPinned:
+          type: boolean
+
+    PostListResponse:
+      type: object
+      required: [posts, total, page]
+      properties:
+        posts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Post"
+        total:
+          type: integer
+        page:
+          type: integer
+        hasMore:
+          type: boolean
+
+    LikeResponse:
+      type: object
+      required: [liked, likesCount]
+      properties:
+        liked:
+          type: boolean
+        likesCount:
+          type: integer
+
+    Comment:
+      type: object
+      required: [id, postId, authorId, content, createdAt]
+      properties:
+        id:
+          type: integer
+        postId:
+          type: integer
+        authorId:
+          type: integer
+        author:
+          $ref: "#/components/schemas/UserProfile"
+        parentId:
+          type: ["integer", "null"]
+        content:
+          type: string
+        replies:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comment"
+        createdAt:
+          type: string
+          format: date-time
+
+    CommentInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          minLength: 1
+        parentId:
+          type: ["integer", "null"]
+
+    CommentListResponse:
+      type: object
+      required: [comments, total, page]
+      properties:
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comment"
+        total:
+          type: integer
+        page:
+          type: integer
+
+    # ── Vote Schemas ─────────────────────────────────────────────────────────
+    VoteResult:
+      type: object
+      required: [success, message, totalVotes]
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        totalVotes:
+          type: integer
+        alreadyVoted:
+          type: boolean
+        nextVoteAt:
+          type: ["string", "null"]
+          format: date-time
+
+    VoteStats:
+      type: object
+      required: [totalVotes, goalVotes, percentage]
+      properties:
+        totalVotes:
+          type: integer
+        goalVotes:
+          type: integer
+        percentage:
+          type: number
+        todayVotes:
+          type: integer
+        weeklyVotes:
+          type: integer
+        monthlyVotes:
+          type: integer
+        milestones:
+          type: array
+          items:
+            $ref: "#/components/schemas/Milestone"
+        nextMilestone:
+          $ref: "#/components/schemas/Milestone"
+
+    MyVoteStatus:
+      type: object
+      required: [hasVotedToday]
+      properties:
+        hasVotedToday:
+          type: boolean
+        nextVoteAt:
+          type: ["string", "null"]
+          format: date-time
+        totalUserVotes:
+          type: integer
+
+    Milestone:
+      type: object
+      required: [votes, label, achieved]
+      properties:
+        votes:
+          type: integer
+        label:
+          type: string
+        achieved:
+          type: boolean
+
+    Supporter:
+      type: object
+      required: [id, name, username, voteCount]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        username:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        isVerified:
+          type: boolean
+        voteCount:
+          type: integer
+
+    SupporterListResponse:
+      type: object
+      required: [supporters]
+      properties:
+        supporters:
+          type: array
+          items:
+            $ref: "#/components/schemas/Supporter"
+
+    # ── Notification Schemas ─────────────────────────────────────────────────
+    Notification:
+      type: object
+      required: [id, userId, type, title, body, isRead, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        type:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        relatedId:
+          type: ["integer", "null"]
+        relatedType:
+          type: ["string", "null"]
+        actorId:
+          type: ["integer", "null"]
+        actor:
+          $ref: "#/components/schemas/UserProfile"
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    NotificationListResponse:
+      type: object
+      required: [notifications, total, page, unreadCount]
+      properties:
+        notifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        total:
+          type: integer
+        page:
+          type: integer
+        unreadCount:
+          type: integer
+
+    UnreadCount:
+      type: object
+      required: [count]
+      properties:
+        count:
+          type: integer
+
+    # ── Message Schemas ──────────────────────────────────────────────────────
+    Conversation:
+      type: object
+      required: [id, isGroup, createdAt]
+      properties:
+        id:
+          type: integer
+        isGroup:
+          type: boolean
+        groupName:
+          type: ["string", "null"]
+        groupAvatarUrl:
+          type: ["string", "null"]
+        participants:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserProfile"
+        lastMessage:
+          $ref: "#/components/schemas/Message"
+        unreadCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    ConversationListResponse:
+      type: object
+      required: [conversations]
+      properties:
+        conversations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Conversation"
+
+    ConversationInput:
+      type: object
+      required: [participantId]
+      properties:
+        participantId:
+          type: integer
+
+    GroupInput:
+      type: object
+      required: [groupName, memberIds]
+      properties:
+        groupName:
+          type: string
+          minLength: 1
+        groupAvatarUrl:
+          type: ["string", "null"]
+        memberIds:
+          type: array
+          items:
+            type: integer
+
+    Message:
+      type: object
+      required: [id, conversationId, senderId, content, createdAt]
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        senderId:
+          type: integer
+        sender:
+          $ref: "#/components/schemas/UserProfile"
+        content:
+          type: string
+        mediaUrl:
+          type: ["string", "null"]
+        replyToId:
+          type: ["integer", "null"]
+        isSeen:
+          type: boolean
+        isDelivered:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    MessageInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          minLength: 1
+        mediaUrl:
+          type: ["string", "null"]
+        replyToId:
+          type: ["integer", "null"]
+
+    MessageListResponse:
+      type: object
+      required: [messages, total, page]
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+        total:
+          type: integer
+        page:
+          type: integer
+
+    # ── Search Schemas ───────────────────────────────────────────────────────
+    SearchResults:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserProfile"
+        posts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Post"
+        hashtags:
+          type: array
+          items:
+            $ref: "#/components/schemas/Hashtag"
+        total:
+          type: integer
+
+    Hashtag:
+      type: object
+      required: [tag, postsCount]
+      properties:
+        tag:
+          type: string
+        postsCount:
+          type: integer
+
+    TrendingResponse:
+      type: object
+      required: [hashtags]
+      properties:
+        hashtags:
+          type: array
+          items:
+            $ref: "#/components/schemas/Hashtag"
+
+    # ── Creator Schemas ──────────────────────────────────────────────────────
+    CreatorStats:
+      type: object
+      required: [totalVotes, todayVotes, weeklyVotes, monthlyVotes, profileViews, postViews, newFollowers, engagementRate]
+      properties:
+        totalVotes:
+          type: integer
+        todayVotes:
+          type: integer
+        weeklyVotes:
+          type: integer
+        monthlyVotes:
+          type: integer
+        profileViews:
+          type: integer
+        postViews:
+          type: integer
+        newFollowers:
+          type: integer
+        engagementRate:
+          type: number
+        goalVotes:
+          type: integer
+
+    CreatorAnalytics:
+      type: object
+      properties:
+        profileViewsHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyMetric"
+        postViewsHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyMetric"
+        followerGrowth:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyMetric"
+        topPosts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Post"
+
+    VoteAnalytics:
+      type: object
+      properties:
+        votesHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyMetric"
+        recentVoters:
+          type: array
+          items:
+            $ref: "#/components/schemas/Supporter"
+
+    DailyMetric:
+      type: object
+      required: [date, value]
+      properties:
+        date:
+          type: string
+        value:
+          type: integer
+
+    CreatorSupporterListResponse:
+      type: object
+      required: [supporters, total, page]
+      properties:
+        supporters:
+          type: array
+          items:
+            $ref: "#/components/schemas/Supporter"
+        total:
+          type: integer
+        page:
+          type: integer
+
+    GoalUpdate:
+      type: object
+      required: [goalVotes]
+      properties:
+        goalVotes:
+          type: integer
+          minimum: 1
+
+    ActivityLog:
+      type: object
+      required: [id, userId, action, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        action:
+          type: string
+        metadata:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    ActivityLogResponse:
+      type: object
+      required: [activities, total, page]
+      properties:
+        activities:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityLog"
+        total:
+          type: integer
+        page:
+          type: integer
+
+    PostsReach:
+      type: object
+      required: [totalViews, totalLikes, totalComments, totalShares, totalDownloads]
+      properties:
+        totalViews:
+          type: integer
+        totalLikes:
+          type: integer
+        totalComments:
+          type: integer
+        totalShares:
+          type: integer
+        totalDownloads:
+          type: integer
+        bestPost:
+          $ref: "#/components/schemas/Post"

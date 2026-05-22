@@ -1,0 +1,14 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "0GodDb6-cO0d2kSKMCwQ_"
+uri = "file://artifacts/app/public/ai-avatar.png"
+type = "image"
+title = "Ai pop idol avatar"
+
+[[generated]]
+id = "ivpYiDnjK6UpXrOGl1SWu"
+uri = "file://artifacts/app/public/ai-cover.png"
+type = "image"
+title = "Ai pop idol cover"
