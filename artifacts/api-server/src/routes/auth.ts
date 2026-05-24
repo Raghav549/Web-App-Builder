@@ -102,7 +102,7 @@ router.post("/auth/forgot-password", async (req: Request, res: Response)=> {
     const token = randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
     await db.insert(passwordResetTokensTable).values({ userId: user.id, token, expiresAt });
-    req.log.info({ token }, "Password reset token generated (email sending not implemented)");
+    console.log({ token }, "Password reset token generated (email sending not implemented)");
   }
   res.json({ message: "If that email exists, a reset link has been sent." });
 });
