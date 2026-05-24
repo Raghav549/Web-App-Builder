@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { db, usersTable, postsTable, votesTable, followsTable, likesTable, commentsTable, notificationsTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
 import { requireAuth, requireCreator } from "../middlewares/requireAuth";
@@ -30,7 +30,7 @@ async function getCreator() {
   return creator;
 }
 
-router.get("/creator/stats", requireAuth, requireCreator, async (req, res): Promise<void> => {
+router.get("/creator/stats", requireAuth, requireCreator, async (req: Request, res: Response)=> {
   const creator = await getCreator();
   if (!creator) {
     res.status(404).json({ error: "Creator not found" });
@@ -61,7 +61,7 @@ router.get("/creator/stats", requireAuth, requireCreator, async (req, res): Prom
   });
 });
 
-router.get("/creator/analytics", requireAuth, requireCreator, async (req, res): Promise<void> => {
+router.get("/creator/analytics", requireAuth, requireCreator, async (req: Request, res: Response)=> {
   const creator = await getCreator();
   if (!creator) {
     res.status(404).json({ error: "Creator not found" });
@@ -85,7 +85,7 @@ router.get("/creator/analytics", requireAuth, requireCreator, async (req, res): 
   res.json({ profileViewsHistory, postViewsHistory, followerGrowth, topPosts });
 });
 
-router.get("/creator/vote-analytics", requireAuth, requireCreator, async (req, res): Promise<void> => {
+router.get("/creator/vote-analytics", requireAuth, requireCreator, async (req: Request, res: Response)=> {
   const allVotes = await db.select().from(votesTable).orderBy(votesTable.createdAt);
   // Group by day
   const dayMap = new Map<string, number>();
@@ -107,7 +107,7 @@ router.get("/creator/vote-analytics", requireAuth, requireCreator, async (req, r
   res.json({ votesHistory, recentVoters: recentVoters.filter(Boolean) });
 });
 
-router.get("/creator/supporters", requireAuth, requireCreator, async (req, res): Promise<void> => {
+router.get("/creator/supporters", requireAuth, requireCreator, async (req: Request, res: Response)=> {
   const page = parseInt(String(req.query.page ?? "1"), 10);
   const allVotes = await db.select().from(votesTable);
   const voteCounts = new Map<number, number>();
@@ -124,7 +124,7 @@ router.get("/creator/supporters", requireAuth, requireCreator, async (req, res):
   res.json({ supporters: filtered, total: filtered.length, page });
 });
 
-router.patch("/creator/goal", requireAuth, requireCreator, async (req, res): Promise<void> => {
+router.patch("/creator/goal", requireAuth, requireCreator, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   const { goalVotes } = req.body;
   if (!goalVotes || goalVotes < 1) {
@@ -135,7 +135,7 @@ router.patch("/creator/goal", requireAuth, requireCreator, async (req, res): Pro
   res.json({ goalVotes });
 });
 
-router.get("/creator/posts", requireAuth, requireCreator, async (req, res): Promise<void> => {
+router.get("/creator/posts", requireAuth, requireCreator, async (req: Request, res: Response)=> {
   const creator = await getCreator();
   if (!creator) {
     res.status(404).json({ error: "Creator not found" });
@@ -148,7 +148,7 @@ router.get("/creator/posts", requireAuth, requireCreator, async (req, res): Prom
   res.json({ posts: enriched, total: enriched.length, page, hasMore: false });
 });
 
-router.get("/creator/comments", requireAuth, requireCreator, async (req, res): Promise<void> => {
+router.get("/creator/comments", requireAuth, requireCreator, async (req: Request, res: Response)=> {
   const creator = await getCreator();
   if (!creator) {
     res.status(404).json({ error: "Creator not found" });

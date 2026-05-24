@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { db, votesTable, usersTable, notificationsTable, activityLogsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth, optionalAuth } from "../middlewares/requireAuth";
@@ -21,7 +21,7 @@ async function getCreator() {
   return creator;
 }
 
-router.post("/votes/cast", requireAuth, async (req, res): Promise<void> => {
+router.post("/votes/cast", requireAuth, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   const today = new Date().toISOString().split("T")[0];
   const existing = await db.select().from(votesTable).where(and(eq(votesTable.voterId, userId), eq(votesTable.voteDate, today)));
@@ -62,7 +62,7 @@ router.post("/votes/cast", requireAuth, async (req, res): Promise<void> => {
   });
 });
 
-router.get("/votes/stats", optionalAuth, async (req, res): Promise<void> => {
+router.get("/votes/stats", optionalAuth, async (req: Request, res: Response)=> {
   const creator = await getCreator();
   const goalVotes = creator?.goalVotes ?? 10000;
   const allVotes = await db.select().from(votesTable);
@@ -79,7 +79,7 @@ router.get("/votes/stats", optionalAuth, async (req, res): Promise<void> => {
   res.json({ totalVotes, goalVotes, percentage, todayVotes, weeklyVotes, monthlyVotes, milestones, nextMilestone });
 });
 
-router.get("/votes/my-status", requireAuth, async (req, res): Promise<void> => {
+router.get("/votes/my-status", requireAuth, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   const today = new Date().toISOString().split("T")[0];
   const todayVote = await db.select().from(votesTable).where(and(eq(votesTable.voterId, userId), eq(votesTable.voteDate, today)));
@@ -95,7 +95,7 @@ router.get("/votes/my-status", requireAuth, async (req, res): Promise<void> => {
   res.json({ hasVotedToday, nextVoteAt, totalUserVotes: userVotes.length });
 });
 
-router.get("/votes/supporters", optionalAuth, async (req, res): Promise<void> => {
+router.get("/votes/supporters", optionalAuth, async (req: Request, res: Response)=> {
   const limit = parseInt(String(req.query.limit ?? "10"), 10);
   const allVotes = await db.select().from(votesTable);
   const voteCounts = new Map<number, number>();

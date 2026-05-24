@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { db, notificationsTable, usersTable, followsTable, postsTable, likesTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
@@ -25,7 +25,7 @@ async function buildUserProfile(user: typeof usersTable.$inferSelect) {
   };
 }
 
-router.get("/notifications", requireAuth, async (req, res): Promise<void> => {
+router.get("/notifications", requireAuth, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   const filter = String(req.query.filter ?? "all");
   const page = parseInt(String(req.query.page ?? "1"), 10);
@@ -47,13 +47,13 @@ router.get("/notifications", requireAuth, async (req, res): Promise<void> => {
   res.json({ notifications: enriched, total: filtered.length, page, unreadCount });
 });
 
-router.post("/notifications/mark-all-read", requireAuth, async (req, res): Promise<void> => {
+router.post("/notifications/mark-all-read", requireAuth, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   await db.update(notificationsTable).set({ isRead: true }).where(eq(notificationsTable.userId, userId));
   res.json({ success: true });
 });
 
-router.post("/notifications/:notificationId/read", requireAuth, async (req, res): Promise<void> => {
+router.post("/notifications/:notificationId/read", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.notificationId) ? req.params.notificationId[0] : req.params.notificationId;
   const notificationId = parseInt(raw, 10);
   const userId = (req as any).userId;
@@ -61,7 +61,7 @@ router.post("/notifications/:notificationId/read", requireAuth, async (req, res)
   res.json({ success: true });
 });
 
-router.delete("/notifications/:notificationId", requireAuth, async (req, res): Promise<void> => {
+router.delete("/notifications/:notificationId", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.notificationId) ? req.params.notificationId[0] : req.params.notificationId;
   const notificationId = parseInt(raw, 10);
   const userId = (req as any).userId;
@@ -69,7 +69,7 @@ router.delete("/notifications/:notificationId", requireAuth, async (req, res): P
   res.sendStatus(204);
 });
 
-router.get("/notifications/unread-count", requireAuth, async (req, res): Promise<void> => {
+router.get("/notifications/unread-count", requireAuth, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   const unread = await db.select().from(notificationsTable).where(and(eq(notificationsTable.userId, userId), eq(notificationsTable.isRead, false)));
   res.json({ count: unread.length });

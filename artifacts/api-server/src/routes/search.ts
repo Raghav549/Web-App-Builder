@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { db, usersTable, postsTable, likesTable, followsTable } from "@workspace/db";
 import { like, eq, and, or, ilike } from "drizzle-orm";
 import { optionalAuth } from "../middlewares/requireAuth";
@@ -25,7 +25,7 @@ async function buildUserProfile(user: typeof usersTable.$inferSelect) {
   };
 }
 
-router.get("/search", optionalAuth, async (req, res): Promise<void> => {
+router.get("/search", optionalAuth, async (req: Request, res: Response)=> {
   const q = String(req.query.q ?? "").trim();
   const type = String(req.query.type ?? "all");
   if (!q) {
@@ -66,7 +66,7 @@ router.get("/search", optionalAuth, async (req, res): Promise<void> => {
   res.json({ users, posts, hashtags, total: users.length + posts.length + hashtags.length });
 });
 
-router.get("/search/trending", async (_req, res): Promise<void> => {
+router.get("/search/trending", async (_req: Request, res: Response)=> {
   const allPosts = await db.select({ caption: postsTable.caption }).from(postsTable);
   const tagCounts = new Map<string, number>();
   for (const p of allPosts) {

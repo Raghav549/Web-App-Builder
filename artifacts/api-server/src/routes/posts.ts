@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { db, postsTable, commentsTable, likesTable, sharesTable, savedPostsTable, usersTable, notificationsTable, activityLogsTable, followsTable } from "@workspace/db";
 import { eq, and, desc, or } from "drizzle-orm";
 import { requireAuth, optionalAuth } from "../middlewares/requireAuth";
@@ -38,7 +38,7 @@ async function enrichPost(post: typeof postsTable.$inferSelect, viewerId?: numbe
   return { ...post, author: authorProfile, isLiked, isSaved };
 }
 
-router.get("/posts", optionalAuth, async (req, res): Promise<void> => {
+router.get("/posts", optionalAuth, async (req: Request, res: Response)=> {
   const page = parseInt(String(req.query.page ?? "1"), 10);
   const limit = parseInt(String(req.query.limit ?? "20"), 10);
   const viewerId = (req as any).userId;
@@ -49,7 +49,7 @@ router.get("/posts", optionalAuth, async (req, res): Promise<void> => {
   res.json({ posts: enriched, total: allPosts.length, page, hasMore: start + limit < allPosts.length });
 });
 
-router.post("/posts", requireAuth, async (req, res): Promise<void> => {
+router.post("/posts", requireAuth, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   const { caption, mediaUrl, mediaType, filterName, visibility = "public", allowComments = true, allowDownloads = true, isPinned = false } = req.body;
   const [post] = await db.insert(postsTable).values({
@@ -61,7 +61,7 @@ router.post("/posts", requireAuth, async (req, res): Promise<void> => {
   res.status(201).json(await enrichPost(post, userId));
 });
 
-router.get("/posts/liked", requireAuth, async (req, res): Promise<void> => {
+router.get("/posts/liked", requireAuth, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   const likes = await db.select().from(likesTable).where(eq(likesTable.userId, userId)).orderBy(desc(likesTable.createdAt));
   const posts = await Promise.all(likes.map(async (l) => {
@@ -73,7 +73,7 @@ router.get("/posts/liked", requireAuth, async (req, res): Promise<void> => {
   res.json({ posts: filtered, total: filtered.length, page: 1, hasMore: false });
 });
 
-router.get("/posts/:postId", optionalAuth, async (req, res): Promise<void> => {
+router.get("/posts/:postId", optionalAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.postId) ? req.params.postId[0] : req.params.postId;
   const postId = parseInt(raw, 10);
   const [post] = await db.select().from(postsTable).where(eq(postsTable.id, postId));
@@ -87,7 +87,7 @@ router.get("/posts/:postId", optionalAuth, async (req, res): Promise<void> => {
   res.json(await enrichPost({ ...post, viewsCount: post.viewsCount + 1 }, viewerId));
 });
 
-router.patch("/posts/:postId", requireAuth, async (req, res): Promise<void> => {
+router.patch("/posts/:postId", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.postId) ? req.params.postId[0] : req.params.postId;
   const postId = parseInt(raw, 10);
   const userId = (req as any).userId;
@@ -110,7 +110,7 @@ router.patch("/posts/:postId", requireAuth, async (req, res): Promise<void> => {
   res.json(await enrichPost(updated, userId));
 });
 
-router.delete("/posts/:postId", requireAuth, async (req, res): Promise<void> => {
+router.delete("/posts/:postId", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.postId) ? req.params.postId[0] : req.params.postId;
   const postId = parseInt(raw, 10);
   const userId = (req as any).userId;
@@ -129,7 +129,7 @@ router.delete("/posts/:postId", requireAuth, async (req, res): Promise<void> => 
   res.sendStatus(204);
 });
 
-router.post("/posts/:postId/like", requireAuth, async (req, res): Promise<void> => {
+router.post("/posts/:postId/like", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.postId) ? req.params.postId[0] : req.params.postId;
   const postId = parseInt(raw, 10);
   const userId = (req as any).userId;
@@ -161,7 +161,7 @@ router.post("/posts/:postId/like", requireAuth, async (req, res): Promise<void> 
   res.json({ liked, likesCount: newCount });
 });
 
-router.post("/posts/:postId/unlike", requireAuth, async (req, res): Promise<void> => {
+router.post("/posts/:postId/unlike", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.postId) ? req.params.postId[0] : req.params.postId;
   const postId = parseInt(raw, 10);
   const userId = (req as any).userId;
@@ -174,7 +174,7 @@ router.post("/posts/:postId/unlike", requireAuth, async (req, res): Promise<void
   res.json({ success: true });
 });
 
-router.get("/posts/:postId/comments", optionalAuth, async (req, res): Promise<void> => {
+router.get("/posts/:postId/comments", optionalAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.postId) ? req.params.postId[0] : req.params.postId;
   const postId = parseInt(raw, 10);
   const comments = await db.select().from(commentsTable).where(and(eq(commentsTable.postId, postId), eq(commentsTable.parentId, null as any))).orderBy(commentsTable.createdAt);
@@ -192,7 +192,7 @@ router.get("/posts/:postId/comments", optionalAuth, async (req, res): Promise<vo
   res.json({ comments: enriched, total: enriched.length, page: 1 });
 });
 
-router.post("/posts/:postId/comments", requireAuth, async (req, res): Promise<void> => {
+router.post("/posts/:postId/comments", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.postId) ? req.params.postId[0] : req.params.postId;
   const postId = parseInt(raw, 10);
   const userId = (req as any).userId;
@@ -228,7 +228,7 @@ router.post("/posts/:postId/comments", requireAuth, async (req, res): Promise<vo
   res.status(201).json({ ...comment, author: authorProfile, replies: [] });
 });
 
-router.delete("/posts/:postId/comments/:commentId", requireAuth, async (req, res): Promise<void> => {
+router.delete("/posts/:postId/comments/:commentId", requireAuth, async (req: Request, res: Response)=> {
   const rawPost = Array.isArray(req.params.postId) ? req.params.postId[0] : req.params.postId;
   const rawComment = Array.isArray(req.params.commentId) ? req.params.commentId[0] : req.params.commentId;
   const postId = parseInt(rawPost, 10);
@@ -252,7 +252,7 @@ router.delete("/posts/:postId/comments/:commentId", requireAuth, async (req, res
   res.sendStatus(204);
 });
 
-router.post("/posts/:postId/pin", requireAuth, async (req, res): Promise<void> => {
+router.post("/posts/:postId/pin", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.postId) ? req.params.postId[0] : req.params.postId;
   const postId = parseInt(raw, 10);
   const userId = (req as any).userId;
@@ -265,14 +265,14 @@ router.post("/posts/:postId/pin", requireAuth, async (req, res): Promise<void> =
   res.json({ success: true });
 });
 
-router.post("/posts/:postId/unpin", requireAuth, async (req, res): Promise<void> => {
+router.post("/posts/:postId/unpin", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.postId) ? req.params.postId[0] : req.params.postId;
   const postId = parseInt(raw, 10);
   await db.update(postsTable).set({ isPinned: false }).where(eq(postsTable.id, postId));
   res.json({ success: true });
 });
 
-router.post("/posts/:postId/share", requireAuth, async (req, res): Promise<void> => {
+router.post("/posts/:postId/share", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.postId) ? req.params.postId[0] : req.params.postId;
   const postId = parseInt(raw, 10);
   const userId = (req as any).userId;

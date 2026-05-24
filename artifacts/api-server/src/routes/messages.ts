@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { db, conversationsTable, conversationParticipantsTable, messagesTable, usersTable, notificationsTable, followsTable, postsTable, likesTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
@@ -48,7 +48,7 @@ async function enrichConversation(conv: typeof conversationsTable.$inferSelect, 
   };
 }
 
-router.get("/conversations", requireAuth, async (req, res): Promise<void> => {
+router.get("/conversations", requireAuth, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   const myConvs = await db.select().from(conversationParticipantsTable).where(eq(conversationParticipantsTable.userId, userId));
   const conversations = await Promise.all(myConvs.map(async (p) => {
@@ -65,7 +65,7 @@ router.get("/conversations", requireAuth, async (req, res): Promise<void> => {
   res.json({ conversations: filtered });
 });
 
-router.post("/conversations", requireAuth, async (req, res): Promise<void> => {
+router.post("/conversations", requireAuth, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   const { participantId } = req.body;
   if (!participantId) {
@@ -90,7 +90,7 @@ router.post("/conversations", requireAuth, async (req, res): Promise<void> => {
   res.status(201).json(await enrichConversation(conv, userId));
 });
 
-router.get("/conversations/:conversationId", requireAuth, async (req, res): Promise<void> => {
+router.get("/conversations/:conversationId", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.conversationId) ? req.params.conversationId[0] : req.params.conversationId;
   const conversationId = parseInt(raw, 10);
   const userId = (req as any).userId;
@@ -102,7 +102,7 @@ router.get("/conversations/:conversationId", requireAuth, async (req, res): Prom
   res.json(await enrichConversation(conv, userId));
 });
 
-router.get("/conversations/:conversationId/messages", requireAuth, async (req, res): Promise<void> => {
+router.get("/conversations/:conversationId/messages", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.conversationId) ? req.params.conversationId[0] : req.params.conversationId;
   const conversationId = parseInt(raw, 10);
   const msgs = await db.select().from(messagesTable).where(and(eq(messagesTable.conversationId, conversationId), eq(messagesTable.deletedForEveryone, false))).orderBy(messagesTable.createdAt);
@@ -114,7 +114,7 @@ router.get("/conversations/:conversationId/messages", requireAuth, async (req, r
   res.json({ messages: enriched, total: enriched.length, page: 1 });
 });
 
-router.post("/conversations/:conversationId/messages", requireAuth, async (req, res): Promise<void> => {
+router.post("/conversations/:conversationId/messages", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.conversationId) ? req.params.conversationId[0] : req.params.conversationId;
   const conversationId = parseInt(raw, 10);
   const userId = (req as any).userId;
@@ -142,7 +142,7 @@ router.post("/conversations/:conversationId/messages", requireAuth, async (req, 
   res.status(201).json({ ...msg, sender: senderProfile });
 });
 
-router.post("/conversations/:conversationId/seen", requireAuth, async (req, res): Promise<void> => {
+router.post("/conversations/:conversationId/seen", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.conversationId) ? req.params.conversationId[0] : req.params.conversationId;
   const conversationId = parseInt(raw, 10);
   const userId = (req as any).userId;
@@ -150,7 +150,7 @@ router.post("/conversations/:conversationId/seen", requireAuth, async (req, res)
   res.json({ success: true });
 });
 
-router.post("/conversations/group", requireAuth, async (req, res): Promise<void> => {
+router.post("/conversations/group", requireAuth, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   const { groupName, groupAvatarUrl, memberIds } = req.body;
   if (!groupName || !memberIds?.length) {

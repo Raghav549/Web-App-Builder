@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { db, usersTable, followsTable, blocksTable, restrictsTable, activityLogsTable, notificationsTable } from "@workspace/db";
 import { eq, and, or, ne } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
@@ -45,7 +45,7 @@ async function buildUserProfile(user: typeof usersTable.$inferSelect, viewerId?:
   };
 }
 
-router.get("/users/:userId", async (req, res): Promise<void> => {
+router.get("/users/:userId", async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.userId) ? req.params.userId[0] : req.params.userId;
   const userId = parseInt(raw, 10);
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
@@ -57,7 +57,7 @@ router.get("/users/:userId", async (req, res): Promise<void> => {
   res.json(await buildUserProfile(user, viewerId));
 });
 
-router.get("/users/by-username/:username", async (req, res): Promise<void> => {
+router.get("/users/by-username/:username", async (req: Request, res: Response)=> {
   const username = Array.isArray(req.params.username) ? req.params.username[0] : req.params.username;
   const [user] = await db.select().from(usersTable).where(eq(usersTable.username, username.toLowerCase()));
   if (!user) {
@@ -68,7 +68,7 @@ router.get("/users/by-username/:username", async (req, res): Promise<void> => {
   res.json(await buildUserProfile(user, viewerId));
 });
 
-router.patch("/users/me/profile", requireAuth, async (req, res): Promise<void> => {
+router.patch("/users/me/profile", requireAuth, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   const { name, username, bio, alternateBio, avatarUrl, coverUrl, mixChannelId } = req.body;
   if (username) {
@@ -92,7 +92,7 @@ router.patch("/users/me/profile", requireAuth, async (req, res): Promise<void> =
   res.json(rest);
 });
 
-router.patch("/users/me/privacy", requireAuth, async (req, res): Promise<void> => {
+router.patch("/users/me/privacy", requireAuth, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   const { isPrivate, whoCanMessage, whoCanComment, whoCanViewFollowers, whoCanDownload } = req.body;
   const updates: any = {};
@@ -112,7 +112,7 @@ router.patch("/users/me/privacy", requireAuth, async (req, res): Promise<void> =
   });
 });
 
-router.get("/users/me/notification-settings", requireAuth, async (req, res): Promise<void> => {
+router.get("/users/me/notification-settings", requireAuth, async (req: Request, res: Response)=> {
   const user = (req as any).user;
   res.json({
     votes: user.notifVotes,
@@ -130,7 +130,7 @@ router.get("/users/me/notification-settings", requireAuth, async (req, res): Pro
   });
 });
 
-router.patch("/users/me/notification-settings", requireAuth, async (req, res): Promise<void> => {
+router.patch("/users/me/notification-settings", requireAuth, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   const fields: any = {};
   const map: Record<string, string> = {
@@ -151,7 +151,7 @@ router.patch("/users/me/notification-settings", requireAuth, async (req, res): P
   });
 });
 
-router.patch("/users/me/chat-settings", requireAuth, async (req, res): Promise<void> => {
+router.patch("/users/me/chat-settings", requireAuth, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   const { readReceipts, typingIndicators, showOnlineStatus, whoCanMessageMe } = req.body;
   const updates: any = {};
@@ -163,7 +163,7 @@ router.patch("/users/me/chat-settings", requireAuth, async (req, res): Promise<v
   res.json({ success: true });
 });
 
-router.post("/users/:userId/follow", requireAuth, async (req, res): Promise<void> => {
+router.post("/users/:userId/follow", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.userId) ? req.params.userId[0] : req.params.userId;
   const targetId = parseInt(raw, 10);
   const followerId = (req as any).userId;
@@ -198,7 +198,7 @@ router.post("/users/:userId/follow", requireAuth, async (req, res): Promise<void
   res.json({ status: status === "approved" ? "following" : "requested" });
 });
 
-router.post("/users/:userId/unfollow", requireAuth, async (req, res): Promise<void> => {
+router.post("/users/:userId/unfollow", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.userId) ? req.params.userId[0] : req.params.userId;
   const targetId = parseInt(raw, 10);
   const followerId = (req as any).userId;
@@ -207,7 +207,7 @@ router.post("/users/:userId/unfollow", requireAuth, async (req, res): Promise<vo
   res.json({ status: "unfollowed" });
 });
 
-router.get("/users/:userId/followers", async (req, res): Promise<void> => {
+router.get("/users/:userId/followers", async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.userId) ? req.params.userId[0] : req.params.userId;
   const userId = parseInt(raw, 10);
   const approved = await db.select().from(followsTable).where(and(eq(followsTable.followingId, userId), eq(followsTable.status, "approved")));
@@ -222,7 +222,7 @@ router.get("/users/:userId/followers", async (req, res): Promise<void> => {
   res.json({ users: filtered, total: filtered.length, page: 1 });
 });
 
-router.get("/users/:userId/following", async (req, res): Promise<void> => {
+router.get("/users/:userId/following", async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.userId) ? req.params.userId[0] : req.params.userId;
   const userId = parseInt(raw, 10);
   const approved = await db.select().from(followsTable).where(and(eq(followsTable.followerId, userId), eq(followsTable.status, "approved")));
@@ -237,7 +237,7 @@ router.get("/users/:userId/following", async (req, res): Promise<void> => {
   res.json({ users: filtered, total: filtered.length, page: 1 });
 });
 
-router.get("/users/:userId/posts", async (req, res): Promise<void> => {
+router.get("/users/:userId/posts", async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.userId) ? req.params.userId[0] : req.params.userId;
   const userId = parseInt(raw, 10);
   const { postsTable, likesTable } = await import("@workspace/db");
@@ -260,7 +260,7 @@ router.get("/users/:userId/posts", async (req, res): Promise<void> => {
   res.json({ posts: enriched, total: enriched.length, page: 1, hasMore: false });
 });
 
-router.post("/users/:userId/block", requireAuth, async (req, res): Promise<void> => {
+router.post("/users/:userId/block", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.userId) ? req.params.userId[0] : req.params.userId;
   const blockedId = parseInt(raw, 10);
   const userId = (req as any).userId;
@@ -272,7 +272,7 @@ router.post("/users/:userId/block", requireAuth, async (req, res): Promise<void>
   res.json({ success: true });
 });
 
-router.post("/users/:userId/unblock", requireAuth, async (req, res): Promise<void> => {
+router.post("/users/:userId/unblock", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.userId) ? req.params.userId[0] : req.params.userId;
   const blockedId = parseInt(raw, 10);
   const userId = (req as any).userId;
@@ -280,7 +280,7 @@ router.post("/users/:userId/unblock", requireAuth, async (req, res): Promise<voi
   res.json({ success: true });
 });
 
-router.get("/users/me/blocked", requireAuth, async (req, res): Promise<void> => {
+router.get("/users/me/blocked", requireAuth, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   const blocks = await db.select().from(blocksTable).where(eq(blocksTable.userId, userId));
   const users = await Promise.all(blocks.map(async (b) => {
@@ -291,7 +291,7 @@ router.get("/users/me/blocked", requireAuth, async (req, res): Promise<void> => 
   res.json({ users: users.filter(Boolean), total: users.length, page: 1 });
 });
 
-router.post("/users/:userId/restrict", requireAuth, async (req, res): Promise<void> => {
+router.post("/users/:userId/restrict", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.userId) ? req.params.userId[0] : req.params.userId;
   const restrictedId = parseInt(raw, 10);
   const userId = (req as any).userId;
@@ -303,7 +303,7 @@ router.post("/users/:userId/restrict", requireAuth, async (req, res): Promise<vo
   res.json({ success: true });
 });
 
-router.post("/users/:userId/unrestrict", requireAuth, async (req, res): Promise<void> => {
+router.post("/users/:userId/unrestrict", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.userId) ? req.params.userId[0] : req.params.userId;
   const restrictedId = parseInt(raw, 10);
   const userId = (req as any).userId;
@@ -311,7 +311,7 @@ router.post("/users/:userId/unrestrict", requireAuth, async (req, res): Promise<
   res.json({ success: true });
 });
 
-router.get("/users/me/restricted", requireAuth, async (req, res): Promise<void> => {
+router.get("/users/me/restricted", requireAuth, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   const restricts = await db.select().from(restrictsTable).where(eq(restrictsTable.userId, userId));
   const users = await Promise.all(restricts.map(async (r) => {
@@ -322,7 +322,7 @@ router.get("/users/me/restricted", requireAuth, async (req, res): Promise<void> 
   res.json({ users: users.filter(Boolean), total: users.length, page: 1 });
 });
 
-router.get("/users/follow-requests", requireAuth, async (req, res): Promise<void> => {
+router.get("/users/follow-requests", requireAuth, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   const pending = await db.select().from(followsTable).where(and(eq(followsTable.followingId, userId), eq(followsTable.status, "pending")));
   const users = await Promise.all(pending.map(async (f) => {
@@ -333,7 +333,7 @@ router.get("/users/follow-requests", requireAuth, async (req, res): Promise<void
   res.json({ users: users.filter(Boolean), total: users.length, page: 1 });
 });
 
-router.post("/users/follow-requests/:requesterId/accept", requireAuth, async (req, res): Promise<void> => {
+router.post("/users/follow-requests/:requesterId/accept", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.requesterId) ? req.params.requesterId[0] : req.params.requesterId;
   const requesterId = parseInt(raw, 10);
   const userId = (req as any).userId;
@@ -349,7 +349,7 @@ router.post("/users/follow-requests/:requesterId/accept", requireAuth, async (re
   res.json({ success: true });
 });
 
-router.post("/users/follow-requests/:requesterId/reject", requireAuth, async (req, res): Promise<void> => {
+router.post("/users/follow-requests/:requesterId/reject", requireAuth, async (req: Request, res: Response)=> {
   const raw = Array.isArray(req.params.requesterId) ? req.params.requesterId[0] : req.params.requesterId;
   const requesterId = parseInt(raw, 10);
   const userId = (req as any).userId;
@@ -357,7 +357,7 @@ router.post("/users/follow-requests/:requesterId/reject", requireAuth, async (re
   res.json({ success: true });
 });
 
-router.get("/users/me/activity-log", requireAuth, async (req, res): Promise<void> => {
+router.get("/users/me/activity-log", requireAuth, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   const page = parseInt(String(req.query.page ?? "1"), 10);
   const { activityLogsTable } = await import("@workspace/db");
@@ -365,7 +365,7 @@ router.get("/users/me/activity-log", requireAuth, async (req, res): Promise<void
   res.json({ activities, total: activities.length, page });
 });
 
-router.get("/users/me/reach", requireAuth, async (req, res): Promise<void> => {
+router.get("/users/me/reach", requireAuth, async (req: Request, res: Response)=> {
   const userId = (req as any).userId;
   const { postsTable, likesTable, commentsTable, sharesTable } = await import("@workspace/db");
   const posts = await db.select().from(postsTable).where(eq(postsTable.authorId, userId));
