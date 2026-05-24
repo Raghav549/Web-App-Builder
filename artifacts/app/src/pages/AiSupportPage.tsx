@@ -41,7 +41,7 @@ export default function AiSupportPage() {
   return (
     <div className="min-h-[100dvh] bg-background">
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border/50 px-4 h-14 flex items-center gap-4">
-        <Button variant="ghost" size="icon" className="rounded-full -ml-2" onClick={() => setLocation(-1)}>
+        <Button variant="ghost" size="icon" className="rounded-full -ml-2" onClick={() => window.history.back()}>
           <ArrowLeft size={20} />
         </Button>
         <span className="font-bold text-lg text-foreground">Support Ai</span>

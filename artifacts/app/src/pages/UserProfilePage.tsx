@@ -1,5 +1,5 @@
 import { useLocation, useParams } from "wouter";
-import { useGetUserByUsername, useGetUserPosts } from "@workspace/api-client-react";
+import { useGetUserByUsername, useGetUserPosts, getGetUserPostsQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { BlueBadge } from "@/components/ui/BlueBadge";
 import { ArrowLeft, MoreHorizontal, Grid } from "lucide-react";
@@ -12,7 +12,7 @@ export default function UserProfilePage() {
   const username = params.username as string;
 
   const { data: user, isLoading: isLoadingUser } = useGetUserByUsername(username);
-  const { data: postsData, isLoading: isLoadingPosts } = useGetUserPosts(user?.id || 0, { query: { enabled: !!user?.id } });
+  const { data: postsData, isLoading: isLoadingPosts } = useGetUserPosts(user?.id || 0, { query: { enabled: !!user?.id, queryKey: getGetUserPostsQueryKey(user?.id || 0) } });
 
   if (isLoadingUser) {
     return (
@@ -32,7 +32,7 @@ export default function UserProfilePage() {
     <div className="min-h-[100dvh] bg-background pb-20">
       <header className="sticky top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b flex items-center justify-between p-4">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="rounded-full -ml-2" onClick={() => setLocation(-1)}>
+          <Button variant="ghost" size="icon" className="rounded-full -ml-2" onClick={() => window.history.back()}>
             <ArrowLeft size={20} />
           </Button>
           <span className="font-bold text-lg">{user.username}</span>

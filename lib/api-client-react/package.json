@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./src/custom-fetch": "./src/custom-fetch.ts"
+    "./src/custom-fetch": "./src/custom-fetch.ts",
+    "./src/generated/api.schemas": "./src/generated/api.schemas.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "catalog:"

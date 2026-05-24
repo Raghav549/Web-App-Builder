@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useSearch, useGetTrending } from "@workspace/api-client-react";
+import { useSearch, useGetTrending, getSearchQueryKey } from "@workspace/api-client-react";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ export default function SearchPage() {
   const { data: trendingData, isLoading: isLoadingTrending } = useGetTrending();
   const { data: searchResults, isLoading: isSearching } = useSearch(
     { q: query, type: activeTab },
-    { query: { enabled: query.length > 1 } }
+    { query: { enabled: query.length > 1, queryKey: getSearchQueryKey({ q: query, type: activeTab }) } }
   );
 
   return (

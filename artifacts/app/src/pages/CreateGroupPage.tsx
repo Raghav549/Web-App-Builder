@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useCreateGroupConversation, useGetFollowers } from "@workspace/api-client-react";
+import { useCreateGroupConversation, useGetFollowers, getGetFollowersQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ export default function CreateGroupPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  const { data: followersData, isLoading: isLoadingFollowers } = useGetFollowers(user?.id || 0, { query: { enabled: !!user?.id } });
+  const { data: followersData, isLoading: isLoadingFollowers } = useGetFollowers(user?.id || 0, { query: { enabled: !!user?.id, queryKey: getGetFollowersQueryKey(user?.id || 0) } });
   const createGroup = useCreateGroupConversation();
   
   const [groupName, setGroupName] = useState("");

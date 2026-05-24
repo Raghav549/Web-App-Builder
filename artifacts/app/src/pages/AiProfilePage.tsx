@@ -29,7 +29,7 @@ export default function AiProfilePage() {
   return (
     <div className="min-h-[100dvh] bg-background pb-20">
       <header className="fixed top-0 w-full z-50 bg-transparent flex justify-between p-4">
-        <Button variant="secondary" size="icon" className="rounded-full bg-black/20 text-white backdrop-blur-md border-0" onClick={() => setLocation(-1)}>
+        <Button variant="secondary" size="icon" className="rounded-full bg-black/20 text-white backdrop-blur-md border-0" onClick={() => window.history.back()}>
           <ArrowLeft size={20} />
         </Button>
         <div className="flex gap-2">
