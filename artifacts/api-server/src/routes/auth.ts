@@ -21,7 +21,7 @@ function buildUserResponse(user: typeof usersTable.$inferSelect) {
   return rest;
 }
 
-router.post("/auth/signup", async (req: Request, res: Response)=> {
+router.post("/auth/signup", async (req: any, res: any)=> {
   const { name, username, email, password, avatarUrl } = req.body;
   if (!name || !username || !email || !password) {
     res.status(400).json({ error: "Missing required fields" });
@@ -57,7 +57,7 @@ router.post("/auth/signup", async (req: Request, res: Response)=> {
   res.status(201).json({ token, user: buildUserResponse(user) });
 });
 
-router.post("/auth/login", async (req: Request, res: Response)=> {
+router.post("/auth/login", async (req: any, res: any)=> {
   const { identifier, password } = req.body;
   if (!identifier || !password) {
     res.status(400).json({ error: "Missing credentials" });
@@ -80,18 +80,18 @@ router.post("/auth/login", async (req: Request, res: Response)=> {
   res.json({ token, user: buildUserResponse(user) });
 });
 
-router.post("/auth/logout", requireAuth, async (req: Request, res: Response)=> {
+router.post("/auth/logout", requireAuth, async (req: any, res: any)=> {
   const userId = (req as any).userId;
   await db.insert(activityLogsTable).values({ userId, action: "logout" });
   res.json({ success: true });
 });
 
-router.get("/auth/me", requireAuth, async (req: Request, res: Response)=> {
+router.get("/auth/me", requireAuth, async (req: any, res: any)=> {
   const user = (req as any).user;
   res.json(buildUserResponse(user));
 });
 
-router.post("/auth/forgot-password", async (req: Request, res: Response)=> {
+router.post("/auth/forgot-password", async (req: any, res: any)=> {
   const { email } = req.body;
   if (!email) {
     res.status(400).json({ error: "Email required" });
@@ -107,7 +107,7 @@ router.post("/auth/forgot-password", async (req: Request, res: Response)=> {
   res.json({ message: "If that email exists, a reset link has been sent." });
 });
 
-router.post("/auth/reset-password", async (req: Request, res: Response)=> {
+router.post("/auth/reset-password", async (req: any, res: any)=> {
   const { token, password } = req.body;
   if (!token || !password) {
     res.status(400).json({ error: "Token and password required" });
@@ -129,7 +129,7 @@ router.post("/auth/reset-password", async (req: Request, res: Response)=> {
   res.json({ message: "Password reset successfully" });
 });
 
-router.post("/auth/change-password", requireAuth, async (req: Request, res: Response)=> {
+router.post("/auth/change-password", requireAuth, async (req: any, res: any)=> {
   const { currentPassword, newPassword } = req.body;
   const user = (req as any).user;
   if (!currentPassword || !newPassword) {
