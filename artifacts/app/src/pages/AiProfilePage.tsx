@@ -1,17 +1,60 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
-import { useGetUserByUsername, useGetVoteStats } from "@workspace/api-client-react";
+import { useGetUserByUsername, useGetVoteStats, useFollowUser, useUnfollowUser, useCreateConversation } from "@workspace/api-client-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { BlueBadge } from "@/components/ui/BlueBadge";
 import { VoteMeter } from "@/components/shared/VoteMeter";
-import { ArrowLeft, Share2, MoreHorizontal, Heart, MessageCircle } from "lucide-react";
+import { ArrowLeft, Share2, MoreHorizontal, MessageCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function AiProfilePage() {
   const [, setLocation] = useLocation();
-  const { data: user, isLoading: isLoadingUser } = useGetUserByUsername("aipopgirl");
+  const { user: me } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { data: aiUser, isLoading: isLoadingUser } = useGetUserByUsername("aipopgirl");
   const { data: voteStats, isLoading: isLoadingStats } = useGetVoteStats();
+  const followUser = useFollowUser();
+  const unfollowUser = useUnfollowUser();
+  const createConversation = useCreateConversation();
+
+  const [localFollowing, setLocalFollowing] = useState<boolean | null>(null);
+  const isFollowing = localFollowing !== null ? localFollowing : !!aiUser?.isFollowing;
+
+  const handleFollow = () => {
+    if (!me) { setLocation("/login"); return; }
+    if (!aiUser) return;
+    if (isFollowing) {
+      unfollowUser.mutate({ userId: aiUser.id }, {
+        onSuccess: () => {
+          setLocalFollowing(false);
+          queryClient.invalidateQueries({ queryKey: ["getUserByUsername", "aipopgirl"] });
+        }
+      });
+    } else {
+      followUser.mutate({ userId: aiUser.id }, {
+        onSuccess: () => {
+          setLocalFollowing(true);
+          toast({ title: "Following Ai!" });
+          queryClient.invalidateQueries({ queryKey: ["getUserByUsername", "aipopgirl"] });
+        }
+      });
+    }
+  };
+
+  const handleMessage = () => {
+    if (!me) { setLocation("/login"); return; }
+    if (!aiUser) return;
+    createConversation.mutate({ data: { participantId: aiUser.id } }, {
+      onSuccess: (conv) => setLocation(`/messages/${conv.id}`),
+      onError: () => toast({ variant: "destructive", title: "Could not open chat" }),
+    });
+  };
 
   if (isLoadingUser) {
     return (
@@ -42,7 +85,6 @@ export default function AiProfilePage() {
         </div>
       </header>
 
-      {/* Cover Photo */}
       <div className="h-56 bg-muted relative">
         <img src="/ai-cover.png" alt="Cover" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-80"></div>
@@ -59,11 +101,21 @@ export default function AiProfilePage() {
             </div>
           </div>
           <div className="flex gap-2 mb-2">
-            <Button size="icon" variant="outline" className="rounded-full border-primary/20 text-primary">
+            <Button
+              size="icon"
+              variant="outline"
+              className="rounded-full border-primary/20 text-primary"
+              onClick={handleMessage}
+              disabled={createConversation.isPending}
+            >
               <MessageCircle size={20} />
             </Button>
-            <Button className="rounded-full px-6 bg-primary text-primary-foreground font-bold shadow-md shadow-primary/20">
-              Follow
+            <Button
+              className={`rounded-full px-6 font-bold shadow-md ${isFollowing ? "bg-muted text-foreground" : "bg-primary text-primary-foreground shadow-primary/20"}`}
+              onClick={handleFollow}
+              disabled={followUser.isPending || unfollowUser.isPending}
+            >
+              {isFollowing ? "Following" : "Follow"}
             </Button>
           </div>
         </div>
@@ -74,20 +126,20 @@ export default function AiProfilePage() {
         </div>
 
         <p className="text-sm text-foreground mb-6">
-          Aiming for the top! Support my journey to becoming the next big pop idol. Every vote counts! ✨💕
+          {aiUser?.bio || "Aiming for the top! Support my journey to becoming the next big pop idol. Every vote counts!"}
         </p>
 
         <div className="flex gap-6 mb-6 text-sm">
-          <div className="flex flex-col">
-            <span className="font-bold text-foreground">12.4k</span>
+          <div className="flex flex-col cursor-pointer" onClick={() => setLocation("/ai/followers")}>
+            <span className="font-bold text-foreground">{aiUser?.followersCount?.toLocaleString() ?? "—"}</span>
             <span className="text-muted-foreground">Followers</span>
           </div>
           <div className="flex flex-col">
-            <span className="font-bold text-foreground">842k</span>
+            <span className="font-bold text-foreground">{voteStats?.totalVotes?.toLocaleString() ?? aiUser?.totalVotes?.toLocaleString() ?? "—"}</span>
             <span className="text-muted-foreground">Votes</span>
           </div>
           <div className="flex flex-col">
-            <span className="font-bold text-foreground">142</span>
+            <span className="font-bold text-foreground">{aiUser?.postsCount ?? "—"}</span>
             <span className="text-muted-foreground">Posts</span>
           </div>
         </div>
@@ -121,15 +173,15 @@ export default function AiProfilePage() {
           <TabsContent value="about" className="mt-6 p-4 bg-card rounded-2xl border border-card-border">
             <h3 className="font-bold mb-2">About Ai</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Hello! I'm Ai, a 19-year-old aspiring pop idol from Tokyo. I love singing, dancing, and making people smile. 
+              Hello! I'm Ai, a 19-year-old aspiring pop idol from Tokyo. I love singing, dancing, and making people smile.
               My dream is to perform at the Tokyo Dome!
             </p>
           </TabsContent>
-          <TabsContent value="progress" className="mt-6 text-center text-muted-foreground p-8">
-            Detailed progress charts coming soon!
+          <TabsContent value="progress" className="mt-6">
+            <VoteMeter stats={voteStats} />
           </TabsContent>
           <TabsContent value="supporters" className="mt-6 text-center text-muted-foreground p-8">
-            Top supporters list coming soon!
+            <Button onClick={() => setLocation("/ai/support")} className="rounded-full">See Top Supporters</Button>
           </TabsContent>
         </Tabs>
       </main>

@@ -1,18 +1,62 @@
+import { useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { useGetUserByUsername, useGetUserPosts, getGetUserPostsQueryKey } from "@workspace/api-client-react";
+import { useGetUserByUsername, useGetUserPosts, getGetUserPostsQueryKey, useFollowUser, useUnfollowUser, useCreateConversation } from "@workspace/api-client-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { BlueBadge } from "@/components/ui/BlueBadge";
 import { ArrowLeft, MoreHorizontal, Grid } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function UserProfilePage() {
   const [, setLocation] = useLocation();
   const params = useParams();
   const username = params.username as string;
+  const { user: me } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: user, isLoading: isLoadingUser } = useGetUserByUsername(username);
   const { data: postsData, isLoading: isLoadingPosts } = useGetUserPosts(user?.id || 0, { query: { enabled: !!user?.id, queryKey: getGetUserPostsQueryKey(user?.id || 0) } });
+  const followUser = useFollowUser();
+  const unfollowUser = useUnfollowUser();
+  const createConversation = useCreateConversation();
+
+  const [localFollowing, setLocalFollowing] = useState<boolean | null>(null);
+  const isFollowing = localFollowing !== null ? localFollowing : !!user?.isFollowing;
+  const isOwnProfile = me?.id === user?.id;
+
+  const handleFollow = () => {
+    if (!me) { setLocation("/login"); return; }
+    if (!user) return;
+    if (isFollowing) {
+      unfollowUser.mutate({ userId: user.id }, {
+        onSuccess: () => {
+          setLocalFollowing(false);
+          queryClient.invalidateQueries({ queryKey: ["getUserByUsername", username] });
+        }
+      });
+    } else {
+      followUser.mutate({ userId: user.id }, {
+        onSuccess: () => {
+          setLocalFollowing(true);
+          toast({ title: `Following ${user.name}!` });
+          queryClient.invalidateQueries({ queryKey: ["getUserByUsername", username] });
+        }
+      });
+    }
+  };
+
+  const handleMessage = () => {
+    if (!me) { setLocation("/login"); return; }
+    if (!user) return;
+    createConversation.mutate({ data: { participantId: user.id } }, {
+      onSuccess: (conv) => setLocation(`/messages/${conv.id}`),
+      onError: () => toast({ variant: "destructive", title: "Could not open chat" }),
+    });
+  };
 
   if (isLoadingUser) {
     return (
@@ -58,11 +102,11 @@ export default function UserProfilePage() {
               <span className="font-bold text-lg">{user.postsCount}</span>
               <span className="text-xs text-muted-foreground">Posts</span>
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col cursor-pointer" onClick={() => setLocation(`/u/${username}/followers`)}>
               <span className="font-bold text-lg">{user.followersCount}</span>
               <span className="text-xs text-muted-foreground">Followers</span>
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col cursor-pointer" onClick={() => setLocation(`/u/${username}/following`)}>
               <span className="font-bold text-lg">{user.followingCount}</span>
               <span className="text-xs text-muted-foreground">Following</span>
             </div>
@@ -74,31 +118,60 @@ export default function UserProfilePage() {
             {user.name}
             {user.isVerified && <BlueBadge size={16} />}
           </h1>
-          <p className="text-sm text-foreground">{user.bio}</p>
+          {user.bio && <p className="text-sm text-foreground">{user.bio}</p>}
         </div>
 
-        <div className="flex gap-2 mb-6">
-          <Button className="flex-1 rounded-xl font-bold bg-primary text-primary-foreground shadow-sm">
-            Follow
-          </Button>
-          <Button variant="outline" className="flex-1 rounded-xl font-bold">
-            Message
-          </Button>
-        </div>
+        {!isOwnProfile && (
+          <div className="flex gap-2 mb-6">
+            <Button
+              className={`flex-1 rounded-xl font-bold shadow-sm ${isFollowing ? "bg-muted text-foreground" : "bg-primary text-primary-foreground"}`}
+              onClick={handleFollow}
+              disabled={followUser.isPending || unfollowUser.isPending}
+            >
+              {isFollowing ? "Following" : "Follow"}
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1 rounded-xl font-bold"
+              onClick={handleMessage}
+              disabled={createConversation.isPending}
+            >
+              Message
+            </Button>
+          </div>
+        )}
+
+        {isOwnProfile && (
+          <div className="flex gap-2 mb-6">
+            <Button className="flex-1 rounded-xl bg-muted text-foreground font-bold shadow-none" onClick={() => setLocation("/profile/edit")}>
+              Edit Profile
+            </Button>
+          </div>
+        )}
 
         <div className="border-t">
           <div className="flex justify-center p-3 border-b-2 border-primary w-full">
             <Grid size={24} className="text-primary" />
           </div>
-          
+
           <div className="grid grid-cols-3 gap-1 mt-1">
             {isLoadingPosts ? (
               Array(6).fill(0).map((_, i) => <Skeleton key={i} className="aspect-square w-full" />)
-            ) : postsData?.posts.map(post => (
-              <div key={post.id} className="aspect-square bg-muted cursor-pointer" onClick={() => setLocation(`/post/${post.id}`)}>
-                {post.mediaUrl && <img src={post.mediaUrl} alt="" className="w-full h-full object-cover" />}
-              </div>
-            ))}
+            ) : postsData?.posts.length === 0 ? (
+              <div className="col-span-3 py-12 text-center text-muted-foreground text-sm">No posts yet</div>
+            ) : (
+              postsData?.posts.map(post => (
+                <div key={post.id} className="aspect-square bg-muted cursor-pointer" onClick={() => setLocation(`/post/${post.id}`)}>
+                  {post.mediaUrl ? (
+                    <img src={post.mediaUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-primary/5 p-2">
+                      <p className="text-[10px] text-muted-foreground text-center line-clamp-3">{post.caption}</p>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         </div>
       </main>
